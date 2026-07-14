@@ -66,15 +66,18 @@ app.post("/api/creator", async (req, res) => {
   res.json({ id: inserted.rows[0].id });
 });
 
-// GET /api/search?q=topic&category=Politics&days=90&creatorId=...&excludeUsed=true
+// GET /api/search?q=topic&categories=Politics,Celebrities&days=90&creatorId=...&excludeUsed=true
 app.get("/api/search", async (req, res) => {
-  const { q, category, days, creatorId, excludeUsed } = req.query;
+  const { q, categories, days, creatorId, excludeUsed } = req.query;
   const params = [];
   const clauses = [];
 
-  if (category) {
-    params.push(category);
-    clauses.push(`category = $${params.length}`);
+  if (categories) {
+    const list = categories.split(",").map((c) => c.trim()).filter(Boolean);
+    if (list.length) {
+      params.push(list);
+      clauses.push(`category = any($${params.length})`);
+    }
   }
   if (days) {
     params.push(Number(days));
@@ -113,7 +116,7 @@ app.get("/api/search", async (req, res) => {
     from articles
     ${where}
     order by ${orderBy}
-    limit 100
+    limit 300
   `;
 
   const result = await pool.query(sql, params);
