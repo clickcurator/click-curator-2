@@ -6,12 +6,13 @@
 <title>Click Curator Archive</title>
 <style>
   :root {
-    --bg: #0f1115;
-    --card: #171a21;
-    --border: #2a2e38;
-    --text: #e8e9ec;
-    --text-muted: #9aa0ab;
-    --accent: #6d8dff;
+    --bg: #fffaf0;
+    --card: #ffffff;
+    --border: #ecdcb8;
+    --text: #262420;
+    --text-muted: #6b6459;
+    --accent: #f6be55;
+    --accent-dark: #262420;
   }
   * { box-sizing: border-box; }
   body {
@@ -21,12 +22,18 @@
     color: var(--text);
   }
   header {
-    padding: 24px 20px 12px;
-    max-width: 1000px;
-    margin: 0 auto;
+    padding: 20px;
+    background: var(--accent);
+    border-bottom: 3px solid var(--accent-dark);
   }
-  h1 { font-size: 20px; margin: 0 0 4px; }
-  .subtitle { color: var(--text-muted); font-size: 14px; margin-bottom: 16px; }
+  header .inner { max-width: 1000px; margin: 0 auto; display: flex; align-items: center; gap: 10px; }
+  .logo-mark {
+    font-family: monospace; font-weight: 700; font-size: 12px;
+    border: 2px solid var(--accent-dark); border-radius: 4px; padding: 2px 5px;
+    letter-spacing: 1px; color: var(--accent-dark);
+  }
+  h1 { font-size: 22px; margin: 0; font-weight: 800; color: var(--accent-dark); }
+  .subtitle { color: var(--text-muted); font-size: 14px; max-width: 1000px; margin: 14px auto 4px; padding: 0 20px; }
 
   #login-bar, #main-app { max-width: 1000px; margin: 0 auto; padding: 0 20px 40px; }
   #login-bar { display: none; }
@@ -35,8 +42,8 @@
     background: var(--card); color: var(--text); font-size: 14px; width: 260px;
   }
   #login-bar button {
-    padding: 10px 16px; border-radius: 8px; border: none; background: var(--accent);
-    color: white; font-size: 14px; cursor: pointer; margin-left: 8px;
+    padding: 10px 16px; border-radius: 8px; border: 2px solid var(--accent-dark); background: var(--accent);
+    color: var(--accent-dark); font-size: 14px; font-weight: 600; cursor: pointer; margin-left: 8px;
   }
 
   .controls { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
@@ -55,7 +62,7 @@
     background: var(--card); color: var(--text-muted); font-size: 13px; cursor: pointer;
     user-select: none;
   }
-  .chip.active { background: var(--accent); color: white; border-color: var(--accent); }
+  .chip.active { background: var(--accent); color: var(--accent-dark); border-color: var(--accent-dark); font-weight: 600; }
 
   .toggle-row { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-muted); }
 
@@ -75,7 +82,7 @@
   .card-summary { font-size: 13px; color: var(--text-muted); margin: 0 0 8px; line-height: 1.4; }
   .card-meta { display: flex; gap: 10px; align-items: center; font-size: 12px; color: var(--text-muted); flex-wrap: wrap; }
   .score-badge {
-    background: rgba(109,141,255,0.15); color: var(--accent); padding: 2px 8px;
+    background: rgba(246,190,85,0.25); color: #8a5b12; padding: 2px 8px;
     border-radius: 999px; font-weight: 600;
   }
   .card-actions { display: flex; gap: 8px; margin-top: 8px; }
@@ -84,7 +91,7 @@
     background: transparent; color: var(--text); cursor: pointer; text-decoration: none;
     display: inline-block;
   }
-  .btn.primary { background: var(--accent); border-color: var(--accent); color: white; }
+  .btn.primary { background: var(--accent); border-color: var(--accent-dark); color: var(--accent-dark); font-weight: 600; }
   .btn:disabled { opacity: 0.5; cursor: default; }
   .card.used { opacity: 0.45; }
 </style>
@@ -92,9 +99,12 @@
 <body>
 
 <header>
-  <h1>Click Curator Archive</h1>
-  <div class="subtitle">Search, filter, and pull content for your next post</div>
+  <div class="inner">
+    <span class="logo-mark">C C</span>
+    <h1>Click Curator Archive</h1>
+  </div>
 </header>
+<div class="subtitle">Search, filter, and pull content for your next post</div>
 
 <div id="login-bar">
   <div class="subtitle" style="margin-bottom:8px;">Enter your email to get started</div>
