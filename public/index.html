@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Click Curator Archive</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --card: #171a21;
+    --border: #2a2e38;
+    --text: #e8e9ec;
+    --text-muted: #9aa0ab;
+    --accent: #6d8dff;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+  header {
+    padding: 24px 20px 12px;
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  .subtitle { color: var(--text-muted); font-size: 14px; margin-bottom: 16px; }
+
+  #login-bar, #main-app { max-width: 1000px; margin: 0 auto; padding: 0 20px 40px; }
+  #login-bar { display: none; }
+  #login-bar input {
+    padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--card); color: var(--text); font-size: 14px; width: 260px;
+  }
+  #login-bar button {
+    padding: 10px 16px; border-radius: 8px; border: none; background: var(--accent);
+    color: white; font-size: 14px; cursor: pointer; margin-left: 8px;
+  }
+
+  .controls { display: flex; flex-direction: column; gap: 12px; margin-bottom: 20px; }
+  .search-row { display: flex; gap: 8px; }
+  input[type="text"] {
+    flex: 1; padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--card); color: var(--text); font-size: 15px;
+  }
+  select {
+    padding: 12px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--card); color: var(--text); font-size: 14px;
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    padding: 6px 14px; border-radius: 999px; border: 1px solid var(--border);
+    background: var(--card); color: var(--text-muted); font-size: 13px; cursor: pointer;
+    user-select: none;
+  }
+  .chip.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+  .toggle-row { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-muted); }
+
+  #count { font-size: 13px; color: var(--text-muted); margin: 4px 0 12px; }
+
+  .results { display: flex; flex-direction: column; gap: 10px; }
+  .card {
+    display: flex; gap: 14px; background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 12px; align-items: flex-start;
+  }
+  .card img {
+    width: 90px; height: 90px; object-fit: cover; border-radius: 8px; flex-shrink: 0;
+    background: #22252d;
+  }
+  .card-body { flex: 1; min-width: 0; }
+  .card-title { font-size: 15px; font-weight: 600; margin: 0 0 4px; color: var(--text); }
+  .card-summary { font-size: 13px; color: var(--text-muted); margin: 0 0 8px; line-height: 1.4; }
+  .card-meta { display: flex; gap: 10px; align-items: center; font-size: 12px; color: var(--text-muted); flex-wrap: wrap; }
+  .score-badge {
+    background: rgba(109,141,255,0.15); color: var(--accent); padding: 2px 8px;
+    border-radius: 999px; font-weight: 600;
+  }
+  .card-actions { display: flex; gap: 8px; margin-top: 8px; }
+  .btn {
+    font-size: 12px; padding: 6px 12px; border-radius: 7px; border: 1px solid var(--border);
+    background: transparent; color: var(--text); cursor: pointer; text-decoration: none;
+    display: inline-block;
+  }
+  .btn.primary { background: var(--accent); border-color: var(--accent); color: white; }
+  .btn:disabled { opacity: 0.5; cursor: default; }
+  .card.used { opacity: 0.45; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Click Curator Archive</h1>
+  <div class="subtitle">Search, filter, and pull content for your next post</div>
+</header>
+
+<div id="login-bar">
+  <div class="subtitle" style="margin-bottom:8px;">Enter your email to get started</div>
+  <input type="text" id="email-input" placeholder="you@example.com" />
+  <button id="login-btn">Continue</button>
+</div>
+
+<div id="main-app" style="display:none;">
+  <div class="controls">
+    <div class="search-row">
+      <input type="text" id="q" placeholder="Search topics, e.g. 'prophecy', 'Israel', 'celebrity faith'..." />
+      <select id="days">
+        <option value="">All time</option>
+        <option value="7">Last 7 days</option>
+        <option value="30">Last 30 days</option>
+        <option value="90" selected>Last 3 months</option>
+        <option value="365">Last year</option>
+      </select>
+    </div>
+    <div class="chips" id="chips"></div>
+    <label class="toggle-row">
+      <input type="checkbox" id="exclude-used" />
+      Hide content I've already used
+    </label>
+  </div>
+
+  <div id="count"></div>
+  <div class="results" id="results"></div>
+</div>
+
+<script>
+const CATEGORIES = ["Politics","Celebrities","Current Events","Christian News","Reaction Content","Bible Teaching","Biblical Prophecy","Business"];
+let state = { q: "", days: "90", active: {}, excludeUsed: false, creatorId: null };
+CATEGORIES.forEach(c => state.active[c] = true);
+
+function renderChips() {
+  const el = document.getElementById('chips');
+  el.innerHTML = '';
+  CATEGORIES.forEach(c => {
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (state.active[c] ? ' active' : '');
+    chip.textContent = c;
+    chip.onclick = () => { state.active[c] = !state.active[c]; renderChips(); runSearch(); };
+    el.appendChild(chip);
+  });
+}
+
+async function ensureCreator() {
+  const saved = localStorage.getItem('cc_creator_id');
+  if (saved) { state.creatorId = saved; showApp(); return; }
+  document.getElementById('login-bar').style.display = 'block';
+}
+
+document.getElementById('login-btn').onclick = async () => {
+  const email = document.getElementById('email-input').value.trim();
+  if (!email) return;
+  const res = await fetch('/api/creator', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email })
+  });
+  const data = await res.json();
+  localStorage.setItem('cc_creator_id', data.id);
+  state.creatorId = data.id;
+  showApp();
+};
+
+function showApp() {
+  document.getElementById('login-bar').style.display = 'none';
+  document.getElementById('main-app').style.display = 'block';
+  renderChips();
+  runSearch();
+}
+
+async function runSearch() {
+  const params = new URLSearchParams();
+  if (state.q) params.set('q', state.q);
+  if (state.days) params.set('days', state.days);
+  const activeCats = CATEGORIES.filter(c => state.active[c]);
+  // API filters by single category; if all active, skip filter; otherwise we filter client-side
+  if (state.creatorId) params.set('creatorId', state.creatorId);
+  if (state.excludeUsed) params.set('excludeUsed', 'true');
+
+  const res = await fetch('/api/search?' + params.toString());
+  let items = await res.json();
+
+  if (activeCats.length < CATEGORIES.length) {
+    items = items.filter(i => activeCats.includes(i.category));
+  }
+
+  document.getElementById('count').textContent = items.length + ' results';
+  const el = document.getElementById('results');
+  el.innerHTML = '';
+  items.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <img src="${item.thumbnail_url || ''}" onerror="this.style.display='none'" />
+      <div class="card-body">
+        <div class="card-title">${escapeHtml(item.title)}</div>
+        <div class="card-summary">${escapeHtml(item.summary || '')}</div>
+        <div class="card-meta">
+          <span>${escapeHtml(item.category)}</span>
+          <span>&middot;</span>
+          <span>${item.date_sent}</span>
+          ${item.final_score ? `<span class="score-badge">${Math.round(item.final_score)} engagement</span>` : ''}
+        </div>
+        <div class="card-actions">
+          <a class="btn primary" href="${item.url}" target="_blank" rel="noopener">Open source</a>
+          <button class="btn use-btn" data-id="${item.id}">Mark as used</button>
+        </div>
+      </div>
+    `;
+    el.appendChild(card);
+  });
+
+  document.querySelectorAll('.use-btn').forEach(btn => {
+    btn.onclick = async () => {
+      await fetch('/api/usage', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ creatorId: state.creatorId, articleId: btn.dataset.id })
+      });
+      btn.closest('.card').classList.add('used');
+      btn.textContent = 'Used';
+      btn.disabled = true;
+    };
+  });
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str || '';
+  return div.innerHTML;
+}
+
+let debounceTimer;
+document.getElementById('q').addEventListener('input', e => {
+  state.q = e.target.value;
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(runSearch, 400);
+});
+document.getElementById('days').addEventListener('change', e => {
+  state.days = e.target.value;
+  runSearch();
+});
+document.getElementById('exclude-used').addEventListener('change', e => {
+  state.excludeUsed = e.target.checked;
+  runSearch();
+});
+
+ensureCreator();
+</script>
+</body>
+</html>

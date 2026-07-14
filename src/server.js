@@ -1,13 +1,37 @@
 import express from "express";
+import path from "path";
+import { fileURLToPath } from "url";
 import pkg from "pg";
 import OpenAI from "openai";
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const { Pool } = pkg;
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const app = express();
 app.use(express.json());
+
+// Serve the frontend (public/index.html and any other static assets)
+app.use(express.static(path.join(__dirname, "..", "public")));
+
+// POST /api/creator  { email }  -> { id }
+// Simple stand-in for real auth: gets or creates a creator row by email.
+app.post("/api/creator", async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ error: "email required" });
+
+  const existing = await pool.query(`select id from creators where email = $1`, [email]);
+  if (existing.rows.length) {
+    return res.json({ id: existing.rows[0].id });
+  }
+
+  const inserted = await pool.query(
+    `insert into creators (email) values ($1) returning id`,
+    [email]
+  );
+  res.json({ id: inserted.rows[0].id });
+});
 
 // GET /api/search?q=topic&category=Politics&days=90&creatorId=...&excludeUsed=true
 app.get("/api/search", async (req, res) => {
