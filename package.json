@@ -1,0 +1,16 @@
+{
+  "name": "click-curator-2",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "ingest": "node src/ingest.js",
+    "start": "node src/server.js"
+  },
+  "dependencies": {
+    "csv-parse": "^5.5.6",
+    "express": "^4.19.2",
+    "node-fetch": "^3.3.2",
+    "openai": "^4.52.0",
+    "pg": "^8.11.5"
+  }
+}
