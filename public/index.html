@@ -110,6 +110,7 @@
   <div class="subtitle" style="margin-bottom:8px;">Enter your email to get started</div>
   <input type="text" id="email-input" placeholder="you@example.com" />
   <button id="login-btn">Continue</button>
+  <div id="login-error" style="color:#b23b3b; font-size:13px; margin-top:10px;"></div>
 </div>
 
 <div id="main-app" style="display:none;">
@@ -161,12 +162,24 @@ async function ensureCreator() {
 document.getElementById('login-btn').onclick = async () => {
   const email = document.getElementById('email-input').value.trim();
   if (!email) return;
+
+  const errorEl = document.getElementById('login-error');
+  errorEl.textContent = '';
+
   const res = await fetch('/api/creator', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email })
   });
+
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    errorEl.textContent = data.error || 'Something went wrong. Please try again.';
+    return;
+  }
+
   const data = await res.json();
   localStorage.setItem('cc_creator_id', data.id);
+  localStorage.setItem('cc_creator_email', email);
   state.creatorId = data.id;
   showApp();
 };

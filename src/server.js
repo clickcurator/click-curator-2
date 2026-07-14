@@ -15,11 +15,44 @@ app.use(express.json());
 // Serve the frontend (public/index.html and any other static assets)
 app.use(express.static(path.join(__dirname, "..", "public")));
 
+// Checks MailerLite for an active subscriber with this email.
+// Returns true only if the subscriber exists and their status is "active".
+async function isActiveSubscriber(email) {
+  const res = await fetch(
+    `https://connect.mailerlite.com/api/subscribers/${encodeURIComponent(email)}`,
+    {
+      headers: {
+        Authorization: `Bearer ${process.env.MAILERLITE_API_KEY}`,
+        Accept: "application/json",
+      },
+    }
+  );
+
+  if (res.status === 404) return false; // not a subscriber at all
+  if (!res.ok) throw new Error(`MailerLite check failed: ${res.status}`);
+
+  const data = await res.json();
+  return data?.data?.status === "active";
+}
+
 // POST /api/creator  { email }  -> { id }
-// Simple stand-in for real auth: gets or creates a creator row by email.
+// Only grants access to emails that are active MailerLite subscribers
+// (i.e. paying / active clients). Everyone else gets denied.
 app.post("/api/creator", async (req, res) => {
   const { email } = req.body;
   if (!email) return res.status(400).json({ error: "email required" });
+
+  let active;
+  try {
+    active = await isActiveSubscriber(email);
+  } catch (err) {
+    console.error(err);
+    return res.status(502).json({ error: "Could not verify subscriber status. Try again shortly." });
+  }
+
+  if (!active) {
+    return res.status(403).json({ error: "That email isn't linked to an active Click Curator subscription." });
+  }
 
   const existing = await pool.query(`select id from creators where email = $1`, [email]);
   if (existing.rows.length) {
